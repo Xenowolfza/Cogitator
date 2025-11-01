@@ -13,12 +13,13 @@ from urllib.parse import urljoin
 #from langchain.embeddings import OpenAIEmbeddings
 #from langchain.vectorstores import FAISS
 
-# ---- NEW (LangChain modular imports) ----
-from langchain_community.chains import RetrievalQA
+# ---- LangChain Modular Imports (2025 structure) ----
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain.chains.retrieval_qa.base import RetrievalQA
+
 
 
 
