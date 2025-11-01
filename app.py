@@ -5,13 +5,21 @@ import shutil
 from typing import List
 from urllib.parse import urljoin
 
-# LangChain & OpenAI
+# LangChain & OpenAI/old
+#from langchain.chains import RetrievalQA
+#from langchain.chat_models import ChatOpenAI
+#from langchain.document_loaders import PyPDFLoader
+#from langchain.text_splitter import RecursiveCharacterTextSplitter
+#from langchain.embeddings import OpenAIEmbeddings
+#from langchain.vectorstores import FAISS
+
+# ---- NEW (LangChain modular imports) ----
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+
 
 # Utils for fetching
 import requests
