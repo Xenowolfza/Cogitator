@@ -1,0 +1,10 @@
+streamlit
+langchain>=0.0.200
+openai
+faiss-cpu
+PyPDF2
+tiktoken
+python-multipart
+pdfplumber
+requests
+beautifulsoup4
