@@ -1,20 +1,13 @@
-# --- core ---
 streamlit
 openai
-
-# --- langchain stack (loose pins for Streamlit Cloud) ---
 langchain
 langchain-core
 langchain-community
 langchain-openai
 langchain-text-splitters
-
-# --- vector + pdf tools ---
 faiss-cpu
 PyPDF2
 pdfplumber
-
-# --- utilities ---
 tiktoken
 requests
 beautifulsoup4
