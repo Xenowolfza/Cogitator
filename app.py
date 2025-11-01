@@ -14,22 +14,27 @@ from urllib.parse import urljoin
 #from langchain.vectorstores import FAISS
 
 
-
-# ---- LangChain Modular Imports (modern structure) ----
+# ---- LangChain Modular Imports (modern, version-flexible) ----
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.prompts import ChatPromptTemplate
+
+# --- Safe imports for retrieval chain, regardless of LangChain version ---
 try:
-    # LangChain <=0.3.9 style
+    # Preferred modern import (LangChain >= 0.3)
     from langchain.chains.retrieval import create_retrieval_chain
     from langchain.chains.combine_documents import create_stuff_documents_chain
 except ImportError:
-    # LangChain >=0.3.10+
-    from langchain_community.chains.retrieval import create_retrieval_chain
-    from langchain_community.chains.combine_documents import create_stuff_documents_chain
-
-
+    try:
+        # Community fallback (some 0.3.10+ builds)
+        from langchain_community.chains.retrieval import create_retrieval_chain
+        from langchain_community.chains.combine_documents import create_stuff_documents_chain
+    except ImportError:
+        # Legacy fallback for 0.2.x and early modular versions
+        from langchain.chains import create_retrieval_chain
+        from langchain.chains.combine_documents import create_stuff_documents_chain
 
 
 
