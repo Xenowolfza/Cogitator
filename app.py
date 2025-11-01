@@ -13,12 +13,15 @@ from urllib.parse import urljoin
 #from langchain.embeddings import OpenAIEmbeddings
 #from langchain.vectorstores import FAISS
 
+
 # ---- LangChain Modular Imports (2025 structure) ----
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chains.retrieval_qa.base import RetrievalQA
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.prompts import ChatPromptTemplate
 
 
 
@@ -187,17 +190,15 @@ if st.button("Ask") and question:
         else:
             with st.spinner("Generating answer..."):
                 llm = ChatOpenAI(model_name=DEFAULT_MODEL, temperature=0)
-                qa = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, return_source_documents=True)
-                result = qa({"query": question})
-                answer = result.get("result")
-                sources = result.get("source_documents", [])
-                st.markdown("### Answer")
-                st.write(answer)
-                if sources:
-                    st.markdown("### Source snippets")
-                    for sd in sources:
-                        meta = sd.metadata if hasattr(sd, "metadata") else {}
-                        src = meta.get("source", "uploaded document")
-                        st.markdown(f"**Source**: {src}")
-                        snippet = sd.page_content
-                        st.write(snippet[:1500] + ("..." if len(snippet) > 1500 else ""))
+                from langchain.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_template(
+    "You are a Warhammer rules assistant. Answer this question based on the documents: {context}\n\nQuestion: {input}"
+)
+
+combine_docs_chain = create_stuff_documents_chain(llm, prompt)
+qa = create_retrieval_chain(retriever, combine_docs_chain)
+
+result = qa.invoke({"input": question})
+answer = result["answer"]
+sources = result.get("context", [])
