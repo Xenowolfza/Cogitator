@@ -13,16 +13,16 @@ from urllib.parse import urljoin
 #from langchain.embeddings import OpenAIEmbeddings
 #from langchain.vectorstores import FAISS
 
-
-# ---- LangChain Modular Imports (modern, version-flexible) ----
+# ---- LangChain Modular Imports (modern structure, 2025 safe) ----
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-try:
-    from langchain_core.prompts import ChatPromptTemplate
-except ImportError:
-    from langchain.prompts import ChatPromptTemplate
+
+# New import locations for LangChain 0.3+
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
 
 
 
