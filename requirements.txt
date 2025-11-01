@@ -1,13 +1,20 @@
+# --- core ---
 streamlit
-langchain==0.3.7
-langchain-core==0.3.14
-langchain-community==0.3.7
-langchain-openai==0.2.8
-langchain-text-splitters==0.3.1
 openai
+
+# --- langchain stack (loose pins for Streamlit Cloud) ---
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-text-splitters
+
+# --- vector + pdf tools ---
 faiss-cpu
 PyPDF2
 pdfplumber
+
+# --- utilities ---
 tiktoken
 requests
 beautifulsoup4
