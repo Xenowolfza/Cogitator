@@ -16,6 +16,7 @@ from PyPDF2 import PdfReader
 import numpy as np
 import faiss
 from openai import OpenAI
+from openai import OpenAIError
 
 # -------------------------
 # Page config + secrets
@@ -152,9 +153,21 @@ def embed_texts(texts: List[str], model: str = "text-embedding-3-small", batch_s
     embeddings = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
-        resp = client.embeddings.create(input=batch, model=model)
-        batch_emb = [item.embedding for item in resp.data]
-        embeddings.extend(batch_emb)
+        try:
+            resp = client.embeddings.create(input=batch, model=model)
+            batch_emb = [item.embedding for item in resp.data]
+            embeddings.extend(batch_emb)
+        except OpenAIError as e:
+            if e.code == 'insufficient_quota':
+                raise Exception(f"OpenAI quota exceeded. Please check your plan and billing details: {e}")
+            elif e.code == 429:
+                st.warning("Rate limit hit. Retrying after delay...")
+                time.sleep(60)  # Wait 1 minute for rate limit
+                resp = client.embeddings.create(input=batch, model=model)
+                batch_emb = [item.embedding for item in resp.data]
+                embeddings.extend(batch_emb)
+            else:
+                raise e
         time.sleep(0.1)
     return embeddings
 
@@ -262,6 +275,11 @@ if st.sidebar.button("Fetch & Index Official PDFs"):
             )
             st.session_state["last_indexed"] = f"{len(downloaded)} PDFs, {res['count']} chunks"
             st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
+        except OpenAIError as e:
+            if e.code == 'insufficient_quota':
+                st.error("OpenAI quota exceeded. Please upgrade your plan or wait for reset. Details: https://platform.openai.com/account/usage")
+            else:
+                st.error(f"OpenAI API error during indexing: {e}")
         except Exception as e:
             st.error(f"Index build failed: {e}")
     
@@ -314,5 +332,12 @@ if st.button("Ask") and question:
                     for r in results:
                         st.write(f"**Source:** {r['source']} — score: {r['score']:.3f}")
                         st.write(r['text'][:1000] + ("..." if len(r['text']) > 1000 else ""))
+            except OpenAIError as e:
+                if e.code == 'insufficient_quota':
+                    st.error("OpenAI quota exceeded. Please upgrade your plan or wait for reset. Details: https://platform.openai.com/account/usage")
+                elif e.code == 429:
+                    st.error("Rate limit hit. Please try again later.")
+                else:
+                    st.error(f"OpenAI API error during query: {e}")
             except Exception as e:
                 st.error(f"Failed to generate answer: {e}")
