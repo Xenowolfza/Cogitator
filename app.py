@@ -186,7 +186,7 @@ def search_faiss(index, metadata, query_embedding, top_k=4):
     return results
 
 @st.cache_data(show_spinner=False)
-def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size: int = 1000, overlap: int = 200, progress_hook=None):
+def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size: int = 1000, overlap: int = 200, _progress_hook=None):
     os.environ["OPENAI_API_KEY"] = openai_api_key
     res = create_faiss_resource()
     index = res["index"]
@@ -200,8 +200,8 @@ def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size
         for c in chunks:
             local_texts.append(c)
             local_sources.append(os.path.basename(p))
-        if progress_hook:
-            progress_hook(len(local_texts))
+        if _progress_hook:
+            _progress_hook(len(local_texts))
     if not local_texts:
         raise ValueError("No text extracted from PDFs.")
     embeddings = embed_texts(local_texts)
