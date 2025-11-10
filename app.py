@@ -31,59 +31,120 @@ if not OPENAI_API_KEY:
     st.warning("OpenAI API key not found. Add OPENAI_API_KEY to Streamlit Secrets or environment to enable LLM.")
 openai.api_key = OPENAI_API_KEY
 
-WARHAMMER_URLS = {
-    "40K": "https://www.warhammer-community.com/en-gb/downloads/warhammer-40000/",
-    "Age of Sigmar": "https://www.warhammer-community.com/en-gb/downloads/warhammer-age-of-sigmar/",
-    "Kill Team": "https://www.warhammer-community.com/en-gb/downloads/kill-team/"
+WARHAMMER_PDFS = {
+    "40K": [
+        {
+            "title": "Core Rules",
+            "url": "https://assets.warhammer-community.com/warhammer40000_core&key_corerules_eng_24.09-5xfayxjekm.pdf",
+            "description": "Essential rules for Warhammer 40,000 battles."
+        },
+        {
+            "title": "Core Rules Updates and Commentary",
+            "url": "https://assets.warhammer-community.com/eng_17-09_warhammer40000_core_rules_updates_and_commentary-htinngebrw-te32nyhkht.pdf",
+            "description": "Amendments and player feedback responses (September 2025)."
+        },
+        {
+            "title": "Balance Dataslate",
+            "url": "https://assets.warhammer-community.com/eng_08-10_warhammer40000_core_rules_balance_dataslate-f47uib0gs9-9kju9nznun.pdf",
+            "description": "Balance adjustments for competitive play (October 2025)."
+        },
+        {
+            "title": "Munitorum Field Manual",
+            "url": "https://assets.warhammer-community.com/warhammer40000_core&key_munitorumfieldmanual_eng_16.10.pdf",
+            "description": "Points values for all factions."
+        },
+        {
+            "title": "Quick Start Guide",
+            "url": "https://assets.warhammer-community.com/warhammer40000_core&key_quickstartguide_eng_24.09-s2afk26smk.pdf",
+            "description": "Beginner introduction to gameplay."
+        },
+        {
+            "title": "Crusade Rules",
+            "url": "https://assets.warhammer-community.com/warhammer40000_crusade_crusaderules_eng_24.09-x7lpyyilc9.pdf",
+            "description": "Narrative campaign rules."
+        }
+    ],
+    "Age of Sigmar": [
+        {
+            "title": "Core Rules",
+            "url": "https://assets.warhammer-community.com/ageofsigmar_corerules&keydownloads_therules_eng_24.09-tbf4egjql3.pdf",
+            "description": "Fundamental rules for Age of Sigmar battles."
+        },
+        {
+            "title": "Rules Updates",
+            "url": "https://assets.warhammer-community.com/eng_24-09_aos_core_rules_rules_updates_september_2025-meyxmktmox-qwey0jc7h2.pdf",
+            "description": "Core rules amendments (September 2025)."
+        },
+        {
+            "title": "Battle Profiles and Rules Updates",
+            "url": "https://assets.warhammer-community.com/eng_24-09_aos_core_rules_battle_profiles_and_rules_updates_september_2025-fjrsbz5oll-rxddil82hp.pdf",
+            "description": "Unit profiles and updates (September 2025)."
+        },
+        {
+            "title": "Quick Start Guide",
+            "url": "https://assets.warhammer-community.com/ageofsigmar_corerules&keydownloads_quickstartguide_eng_24.09-xoffxcicsi.pdf",
+            "description": "Introductory gameplay guide."
+        }
+    ],
+    "Kill Team": [
+        {
+            "title": "Lite Rules",
+            "url": "https://assets.warhammer-community.com/eng_jul25_kt_lite_rules-jmjv4hdamy-qlsqxdf83p.pdf",
+            "description": "Simplified rules for Kill Team skirmishes (July 2025)."
+        },
+        {
+            "title": "Universal Equipment Rules",
+            "url": "https://assets.warhammer-community.com/rules-downloads/kill-team/key-downloads/universal-equipment-rules/killteam_keydownloads_universalequipment_eng_02.10.24.pdf",
+            "description": "Equipment options for all teams."
+        }
+    ]
 }
 
 # -------------------------
-# Helpers: PDF fetch/parse
+# Helpers: PDF download/extract/chunk
 # -------------------------
-def fetch_pdf_links(url: str) -> List[str]:
+def download_pdfs(pdf_tuples: List[Tuple[str, str]], tempdir: str, progress_callback=None) -> List[Tuple[str, str]]:
     """
-    Smart fetcher for Warhammer Community download pages.
-    Finds hidden, dynamically generated, or asset-hosted PDF links.
-    Filters for core rules, FAQs, dataslates, and errata.
+    Download PDFs from (url, title) tuples.
+    Returns list of (local_path, title) for successful downloads.
     """
-    resp = requests.get(url, timeout=30)
-    resp.raise_for_status()
-    text = resp.text
-    soup = BeautifulSoup(text, "html.parser")
+    downloaded = []
+    total = len(pdf_tuples)
+    for i, (url, title) in enumerate(pdf_tuples):
+        try:
+            filename = f"{title.replace(' ', '_')}.pdf"
+            path = os.path.join(tempdir, filename)
+            resp = requests.get(url, timeout=30)
+            resp.raise_for_status()
+            with open(path, 'wb') as f:
+                f.write(resp.content)
+            downloaded.append((path, title))
+            if progress_callback:
+                progress_callback(i + 1, total, title)
+        except Exception as e:
+            st.warning(f"Failed to download {title}: {e}")
+    return downloaded
 
-    found_links = set()
+def extract_text_from_pdf(pdf_path: str) -> str:
+    """Extract text from a PDF using PyPDF2."""
+    try:
+        reader = PdfReader(pdf_path)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+        return text
+    except Exception as e:
+        st.warning(f"Text extraction failed for {pdf_path}: {e}")
+        return ""
 
-    # --- 1️⃣ Look for any visible <a> or <button> links in HTML ---
-    for a in soup.find_all(["a", "button"], href=True):
-        href = a["href"]
-        if href.lower().endswith(".pdf") or "assets.warhammer-community.com" in href:
-            found_links.add(urljoin(url, href))
-
-    # --- 2️⃣ Search full page text for asset-based PDFs (hidden in JS) ---
-    for token in text.split('"'):
-        if token.lower().endswith(".pdf") and "assets.warhammer-community.com" in token:
-            found_links.add(token.strip())
-
-    # --- 3️⃣ Filter to keep only relevant files ---
-    PRIORITY_KEYWORDS = [
-        "core", "rule", "faq", "dataslate", "commentary", "errata", "update"
-    ]
-    relevant_links = [
-        l for l in found_links
-        if any(k in l.lower() for k in PRIORITY_KEYWORDS)
-    ]
-
-    # --- 4️⃣ Clean & report ---
-    clean_links = sorted(set(relevant_links))
-    if not clean_links:
-        st.warning("⚠️ No relevant PDFs found — the page uses a dynamic format.")
-    else:
-        st.info(f"✅ Found {len(clean_links)} relevant Warhammer PDF(s).")
-        for link in clean_links:
-            st.write(f"- {link}")
-
-    return clean_links
-
+def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[str]:
+    """Split text into overlapping chunks."""
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), chunk_size - overlap):
+        chunk = " ".join(words[i:i + chunk_size])
+        chunks.append(chunk)
+    return chunks
 
 # -------------------------
 # Embedding & FAISS helpers
@@ -151,7 +212,7 @@ def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size
 # UI
 # -------------------------
 st.sidebar.header("Configuration")
-system = st.sidebar.selectbox("Select ruleset", list(WARHAMMER_URLS.keys()))
+system = st.sidebar.selectbox("Select ruleset", list(WARHAMMER_PDFS.keys()))
 max_pdfs = st.sidebar.slider("Max PDFs to fetch (smaller = faster)", 1, 20, 5)
 chunk_size = st.sidebar.number_input("Chunk token size", min_value=200, max_value=2000, value=1000, step=100)
 overlap = st.sidebar.number_input("Chunk overlap", min_value=0, max_value=500, value=200, step=50)
@@ -163,41 +224,53 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("Note: Index is in-memory. For larger corpora use persistent storage.")
 
 if st.sidebar.button("Fetch & Index Official PDFs"):
-    with st.spinner("Fetching PDF links..."):
-        try:
-            links = fetch_pdf_links(WARHAMMER_URLS[system])
-        except Exception as e:
-            st.error(f"Failed to fetch links: {e}")
-            links = []
-    if not links:
-        st.info("No PDF links found on the page.")
+    pdf_list = WARHAMMER_PDFS[system]
+    selected_pdfs = pdf_list[:max_pdfs]  # Limit to slider value
+    
+    st.info(f"✅ Using {len(selected_pdfs)} predefined Warhammer PDFs for {system}.")
+    for item in selected_pdfs:
+        st.write(f"- {item['title']}: {item['description']}")
+        st.write(f"  URL: {item['url']}")
+    
+    tempdir = tempfile.mkdtemp(prefix="rules_")
+    progress = st.progress(0)
+    status = st.empty()
+    
+    def prog_cb(count, total, name=""):
+        progress.progress(int((count / total) * 100))
+        status.text(f"Downloaded {count}/{total}: {name}")
+    
+    with st.spinner("Downloading PDFs..."):
+        downloaded = download_pdfs(
+            [(item["url"], item["title"]) for item in selected_pdfs], 
+            tempdir, 
+            progress_callback=prog_cb
+        )
+    
+    if not downloaded:
+        st.error("No PDFs downloaded.")
     else:
-        tempdir = tempfile.mkdtemp(prefix="rules_")
-        progress = st.progress(0)
-        status = st.empty()
-        def prog_cb(count, total, name=""):
-            progress.progress(int((count/total)*100))
-            status.text(f"Downloaded {count}/{total}: {name}")
-
-        with st.spinner("Downloading PDFs..."):
-            downloaded = download_pdfs(links, tempdir, max_files=max_pdfs, progress_callback=prog_cb)
-
-        if not downloaded:
-            st.error("No PDFs downloaded.")
-        else:
-            status.text("Extracting text and building index...")
-            def build_progress_hook(n):
-                status.text(f"Prepared {n} chunks (approx)")
-            try:
-                res = build_index_from_pdfs(tuple(downloaded), OPENAI_API_KEY, chunk_size=chunk_size, overlap=overlap, progress_hook=build_progress_hook)
-                st.session_state["last_indexed"] = f"{res['docs']} PDFs, {res['count']} chunks"
-                st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
-            except Exception as e:
-                st.error(f"Index build failed: {e}")
+        status.text("Extracting text and building index...")
+        def build_progress_hook(n):
+            status.text(f"Prepared {n} chunks (approx.)")
+        
         try:
-            shutil.rmtree(tempdir)
-        except Exception:
-            pass
+            res = build_index_from_pdfs(
+                tuple([path for path, _ in downloaded]), 
+                OPENAI_API_KEY, 
+                chunk_size=chunk_size, 
+                overlap=overlap, 
+                progress_hook=build_progress_hook
+            )
+            st.session_state["last_indexed"] = f"{len(selected_pdfs)} PDFs, {res['count']} chunks"
+            st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
+        except Exception as e:
+            st.error(f"Index build failed: {e}")
+    
+    try:
+        shutil.rmtree(tempdir)
+    except Exception:
+        pass
 
 st.header("Ask the Rules Assistant")
 st.markdown(st.secrets.get("WELCOME_MESSAGE", "Ask a rules question about 40K, Age of Sigmar, or Kill Team."))
