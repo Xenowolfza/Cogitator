@@ -42,59 +42,46 @@ WARHAMMER_URLS = {
 # -------------------------
 def fetch_pdf_links(url: str) -> List[str]:
     """
-    Fetches and filters official Warhammer download PDFs.
-    Focuses only on core rules, FAQs, and balance updates.
-    Supports redirect links and embedded JSON data.
+    Smart fetcher for Warhammer Community download pages.
+    Finds hidden, dynamically generated, or asset-hosted PDF links.
+    Filters for core rules, FAQs, dataslates, and errata.
     """
     resp = requests.get(url, timeout=30)
     resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-    links = set()
+    text = resp.text
+    soup = BeautifulSoup(text, "html.parser")
 
-    # Keywords to prioritize (core rules, FAQs, balance dataslates)
+    found_links = set()
+
+    # --- 1️⃣ Look for any visible <a> or <button> links in HTML ---
+    for a in soup.find_all(["a", "button"], href=True):
+        href = a["href"]
+        if href.lower().endswith(".pdf") or "assets.warhammer-community.com" in href:
+            found_links.add(urljoin(url, href))
+
+    # --- 2️⃣ Search full page text for asset-based PDFs (hidden in JS) ---
+    for token in text.split('"'):
+        if token.lower().endswith(".pdf") and "assets.warhammer-community.com" in token:
+            found_links.add(token.strip())
+
+    # --- 3️⃣ Filter to keep only relevant files ---
     PRIORITY_KEYWORDS = [
-        "core rules", "core-rules",
-        "rules commentary", "faq",
-        "balance dataslate", "balance-dataslate",
-        "errata", "update"
+        "core", "rule", "faq", "dataslate", "commentary", "errata", "update"
+    ]
+    relevant_links = [
+        l for l in found_links
+        if any(k in l.lower() for k in PRIORITY_KEYWORDS)
     ]
 
-    # --- 1️⃣ Direct .pdf links or redirects ---
-    for a in soup.find_all("a", href=True):
-        href = a["href"].strip()
-        text = a.get_text(strip=True).lower()
-        target = f"{href} {text}"
-
-        # Filter for relevant content
-        if any(k in target.lower() for k in PRIORITY_KEYWORDS):
-            full_url = urljoin(url, href)
-            if full_url.lower().endswith(".pdf"):
-                links.add(full_url)
-            elif "redirect" in full_url and "link" in full_url:
-                try:
-                    r2 = requests.get(full_url, allow_redirects=True, timeout=20)
-                    if r2.url.lower().endswith(".pdf"):
-                        links.add(r2.url)
-                except Exception as e:
-                    st.warning(f"Redirect failed: {href} ({e})")
-
-    # --- 2️⃣ Check for JSON-style embedded data blocks ---
-    try:
-        for script in soup.find_all("script"):
-            if "downloads" in script.text and ".pdf" in script.text:
-                for line in script.text.split('"'):
-                    if line.lower().endswith(".pdf"):
-                        if any(k in line.lower() for k in PRIORITY_KEYWORDS):
-                            links.add(line)
-    except Exception:
-        pass
-
-    # --- 3️⃣ Sanitize duplicates and return sorted list ---
-    clean_links = sorted(set(links))
+    # --- 4️⃣ Clean & report ---
+    clean_links = sorted(set(relevant_links))
     if not clean_links:
-        st.warning("⚠️ No relevant PDFs found — the page format may have changed.")
+        st.warning("⚠️ No relevant PDFs found — the page uses a dynamic format.")
     else:
-        st.info(f"✅ Found {len(clean_links)} relevant files.")
+        st.info(f"✅ Found {len(clean_links)} relevant Warhammer PDF(s).")
+        for link in clean_links:
+            st.write(f"- {link}")
+
     return clean_links
 
 
