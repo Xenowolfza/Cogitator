@@ -9,11 +9,9 @@ import time
 import tempfile
 import shutil
 from typing import List, Tuple, Dict
-from urllib.parse import urljoin
 
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 from PyPDF2 import PdfReader
 import numpy as np
 import faiss
@@ -202,14 +200,11 @@ def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size
             local_sources.append(os.path.basename(p))
         if _progress_hook:
             _progress_hook(len(local_texts))
-
     if not local_texts:
         raise ValueError("No text extracted from PDFs.")
-
     embeddings = embed_texts(local_texts)
     add_to_faiss(index, metadata, embeddings, local_texts, local_sources)
     return {"count": len(local_texts), "docs": len(pdf_paths)}
-
 
 # -------------------------
 # UI
@@ -263,9 +258,9 @@ if st.sidebar.button("Fetch & Index Official PDFs"):
                 OPENAI_API_KEY, 
                 chunk_size=chunk_size, 
                 overlap=overlap, 
-                progress_hook=build_progress_hook
+                _progress_hook=build_progress_hook
             )
-            st.session_state["last_indexed"] = f"{len(selected_pdfs)} PDFs, {res['count']} chunks"
+            st.session_state["last_indexed"] = f"{len(downloaded)} PDFs, {res['count']} chunks"
             st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
         except Exception as e:
             st.error(f"Index build failed: {e}")
