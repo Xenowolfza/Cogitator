@@ -149,7 +149,7 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
 # -------------------------
 # Embedding & FAISS helpers
 # -------------------------
-def embed_texts(texts: List[str], model: str = "text-embedding-3-small", batch_size: int = 16) -> List[List[float]]:
+def embed_texts(texts: List[str], model: str = "text-embedding-ada-002", batch_size: int = 16) -> List[List[float]]:
     embeddings = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
