@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+# Streamlit secrets
+.streamlit/secrets.toml
+# temporary downloads
+rules_*/
+tmp_rules/

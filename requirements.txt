@@ -1,14 +1,8 @@
 streamlit
 openai
-langchain
-langchain-core
-langchain-community
-langchain-openai
-langchain-text-splitters
 faiss-cpu
 PyPDF2
-pdfplumber
-tiktoken
 requests
 beautifulsoup4
 python-multipart
+tqdm
