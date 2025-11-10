@@ -41,72 +41,62 @@ WARHAMMER_URLS = {
 # Helpers: PDF fetch/parse
 # -------------------------
 def fetch_pdf_links(url: str) -> List[str]:
-    resp = requests.get(url, timeout=20)
+    """
+    Fetches and filters official Warhammer download PDFs.
+    Focuses only on core rules, FAQs, and balance updates.
+    Supports redirect links and embedded JSON data.
+    """
+    resp = requests.get(url, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
-    links = []
+    links = set()
+
+    # Keywords to prioritize (core rules, FAQs, balance dataslates)
+    PRIORITY_KEYWORDS = [
+        "core rules", "core-rules",
+        "rules commentary", "faq",
+        "balance dataslate", "balance-dataslate",
+        "errata", "update"
+    ]
+
+    # --- 1️⃣ Direct .pdf links or redirects ---
     for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if href.lower().endswith(".pdf"):
-            full = urljoin(url, href)
-            if full not in links:
-                links.append(full)
-    return links
+        href = a["href"].strip()
+        text = a.get_text(strip=True).lower()
+        target = f"{href} {text}"
 
-def download_pdfs(links: List[str], target_dir: str, max_files: int = None, progress_callback=None) -> List[str]:
-    os.makedirs(target_dir, exist_ok=True)
-    downloaded = []
-    count = 0
-    total = len(links) if (max_files is None) else min(len(links), max_files)
-    for link in links:
-        if max_files is not None and count >= max_files:
-            break
-        filename = os.path.join(target_dir, os.path.basename(link.split("?")[0]))
-        if os.path.exists(filename):
-            downloaded.append(filename)
-            count += 1
-            if progress_callback:
-                progress_callback(count, total, f"Cached: {os.path.basename(filename)}")
-            continue
-        try:
-            r = requests.get(link, timeout=30)
-            r.raise_for_status()
-            with open(filename, "wb") as f:
-                f.write(r.content)
-            downloaded.append(filename)
-            count += 1
-            if progress_callback:
-                progress_callback(count, total, os.path.basename(filename))
-        except Exception as e:
-            st.warning(f"Failed to download {link}: {e}")
-    return downloaded
+        # Filter for relevant content
+        if any(k in target.lower() for k in PRIORITY_KEYWORDS):
+            full_url = urljoin(url, href)
+            if full_url.lower().endswith(".pdf"):
+                links.add(full_url)
+            elif "redirect" in full_url and "link" in full_url:
+                try:
+                    r2 = requests.get(full_url, allow_redirects=True, timeout=20)
+                    if r2.url.lower().endswith(".pdf"):
+                        links.add(r2.url)
+                except Exception as e:
+                    st.warning(f"Redirect failed: {href} ({e})")
 
-def extract_text_from_pdf(path: str) -> str:
-    text_parts = []
+    # --- 2️⃣ Check for JSON-style embedded data blocks ---
     try:
-        reader = PdfReader(path)
-        for p in reader.pages:
-            try:
-                text = p.extract_text() or ""
-            except Exception:
-                text = ""
-            if text:
-                text_parts.append(text)
-    except Exception as e:
-        st.warning(f"Failed to read PDF {path}: {e}")
-    return "\n\n".join(text_parts)
+        for script in soup.find_all("script"):
+            if "downloads" in script.text and ".pdf" in script.text:
+                for line in script.text.split('"'):
+                    if line.lower().endswith(".pdf"):
+                        if any(k in line.lower() for k in PRIORITY_KEYWORDS):
+                            links.add(line)
+    except Exception:
+        pass
 
-def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[str]:
-    if not text:
-        return []
-    tokens = text.split()
-    chunks = []
-    i = 0
-    while i < len(tokens):
-        chunk = tokens[i:i+chunk_size]
-        chunks.append(" ".join(chunk))
-        i += chunk_size - overlap
-    return chunks
+    # --- 3️⃣ Sanitize duplicates and return sorted list ---
+    clean_links = sorted(set(links))
+    if not clean_links:
+        st.warning("⚠️ No relevant PDFs found — the page format may have changed.")
+    else:
+        st.info(f"✅ Found {len(clean_links)} relevant files.")
+    return clean_links
+
 
 # -------------------------
 # Embedding & FAISS helpers
