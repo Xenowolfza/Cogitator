@@ -15,7 +15,7 @@ import requests
 from PyPDF2 import PdfReader
 import numpy as np
 import faiss
-import openai
+from openai import OpenAI
 
 # -------------------------
 # Page config + secrets
@@ -27,7 +27,8 @@ DEFAULT_MODEL = st.secrets.get("DEFAULT_MODEL", "gpt-3.5-turbo")
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     st.warning("OpenAI API key not found. Add OPENAI_API_KEY to Streamlit Secrets or environment to enable LLM.")
-openai.api_key = OPENAI_API_KEY
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 WARHAMMER_PDFS = {
     "40K": [
@@ -151,8 +152,8 @@ def embed_texts(texts: List[str], model: str = "text-embedding-3-small", batch_s
     embeddings = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
-        resp = openai.Embedding.create(input=batch, model=model)
-        batch_emb = [item["embedding"] for item in resp["data"]]
+        resp = client.embeddings.create(input=batch, model=model)
+        batch_emb = [item.embedding for item in resp.data]
         embeddings.extend(batch_emb)
         time.sleep(0.1)
     return embeddings
@@ -185,7 +186,6 @@ def search_faiss(index, metadata, query_embedding, top_k=4):
 
 @st.cache_data(show_spinner=False)
 def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size: int = 1000, overlap: int = 200, _progress_hook=None):
-    os.environ["OPENAI_API_KEY"] = openai_api_key
     res = create_faiss_resource()
     index = res["index"]
     metadata = res["metadata"]
@@ -305,8 +305,8 @@ if st.button("Ask") and question:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": f"Use only the context below to answer the question.\n\nContext:\n{context}\n\nQuestion: {question}"}
                 ]
-                chat_resp = openai.ChatCompletion.create(model=DEFAULT_MODEL, messages=messages, max_tokens=512, temperature=0.0)
-                answer = chat_resp["choices"][0]["message"]["content"].strip()
+                chat_resp = client.chat.completions.create(model=DEFAULT_MODEL, messages=messages, max_tokens=512, temperature=0.0)
+                answer = chat_resp.choices[0].message.content.strip()
                 st.markdown("### Answer")
                 st.write(answer)
                 if results:
