@@ -202,11 +202,14 @@ def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size
             local_sources.append(os.path.basename(p))
         if _progress_hook:
             _progress_hook(len(local_texts))
+
     if not local_texts:
         raise ValueError("No text extracted from PDFs.")
+
     embeddings = embed_texts(local_texts)
     add_to_faiss(index, metadata, embeddings, local_texts, local_sources)
     return {"count": len(local_texts), "docs": len(pdf_paths)}
+
 
 # -------------------------
 # UI
