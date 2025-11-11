@@ -8,6 +8,7 @@ import os
 import time
 import tempfile
 import shutil
+import io
 from typing import List, Tuple, Dict
 
 import streamlit as st
@@ -16,7 +17,9 @@ from PyPDF2 import PdfReader
 import numpy as np
 import faiss
 from openai import OpenAI
-from openai import OpenAIError
+from openai import APIError
+from PIL import Image
+import pytesseract
 
 # -------------------------
 # Page config + secrets
@@ -25,11 +28,15 @@ st.set_page_config(page_title="Warhammer Rules Assistant", layout="wide")
 st.title(st.secrets.get("ASSISTANT_NAME", "Warhammer Rules Assistant"))
 
 DEFAULT_MODEL = st.secrets.get("DEFAULT_MODEL", "gpt-3.5-turbo")
+EMBEDDING_MODEL = st.secrets.get("EMBEDDING_MODEL", "text-embedding-ada-002")
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     st.warning("OpenAI API key not found. Add OPENAI_API_KEY to Streamlit Secrets or environment to enable LLM.")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Note: For OCR functionality, ensure 'pytesseract' is installed via pip and Tesseract OCR is installed system-wide.
+# On Streamlit Cloud, this may require custom setup or local deployment.
 
 WARHAMMER_PDFS = {
     "40K": [
@@ -147,9 +154,22 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
     return chunks
 
 # -------------------------
+# OCR Helper
+# -------------------------
+def extract_text_from_image(image_bytes: bytes) -> str:
+    """Extract text from an image using OCR (pytesseract)."""
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+        text = pytesseract.image_to_string(image)
+        return text.strip()
+    except Exception as e:
+        st.warning(f"OCR extraction failed: {e}")
+        return ""
+
+# -------------------------
 # Embedding & FAISS helpers
 # -------------------------
-def embed_texts(texts: List[str], model: str = "text-embedding-3-small", batch_size: int = 16) -> List[List[float]]:
+def embed_texts(texts: List[str], model: str = EMBEDDING_MODEL, batch_size: int = 16) -> List[List[float]]:
     embeddings = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i+batch_size]
@@ -157,7 +177,7 @@ def embed_texts(texts: List[str], model: str = "text-embedding-3-small", batch_s
             resp = client.embeddings.create(input=batch, model=model)
             batch_emb = [item.embedding for item in resp.data]
             embeddings.extend(batch_emb)
-        except OpenAIError as e:
+        except APIError as e:
             if e.code == 'insufficient_quota':
                 raise Exception(f"OpenAI quota exceeded. Please check your plan and billing details: {e}")
             elif e.code == 429:
@@ -186,12 +206,29 @@ def create_faiss_resource(system: str, dim: int = 1536):
         st.info(f"🧠 Created new FAISS index for {system}.")
     return store[system]
 
+def add_to_faiss(index, metadata, embeddings: List[List[float]], texts: List[str], sources: List[str]):
+    arr = np.array(embeddings).astype("float32")
+    norms = np.linalg.norm(arr, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    arr = arr / norms
+    index.add(arr)
+    metadata["texts"].extend(texts)
+    metadata["sources"].extend(sources)
 
-#FAISS index:
+def search_faiss(index, metadata, query_embedding, top_k=4):
+    q = np.array(query_embedding).astype("float32").reshape(1, -1)
+    q = q / (np.linalg.norm(q, axis=1, keepdims=True) + 1e-12)
+    D, I = index.search(q, top_k)
+    results = []
+    for score, idx in zip(D[0], I[0]):
+        if idx < 0:
+            continue
+        results.append({"score": float(score), "text": metadata["texts"][idx], "source": metadata["sources"][idx]})
+    return results
 
 @st.cache_data(show_spinner=False)
-def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size: int = 1000, overlap: int = 200, _progress_hook=None):
-    res = create_faiss_resource()
+def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, system: str, chunk_size: int = 1000, overlap: int = 200, _progress_hook=None):
+    res = create_faiss_resource(system)
     index = res["index"]
     metadata = res["metadata"]
 
@@ -216,6 +253,7 @@ def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size
 # -------------------------
 st.sidebar.header("Configuration")
 system = st.sidebar.selectbox("Select ruleset", list(WARHAMMER_PDFS.keys()))
+
 # Detect ruleset changes and reset session-specific state
 if "active_ruleset" not in st.session_state or st.session_state["active_ruleset"] != system:
     st.session_state["active_ruleset"] = system
@@ -235,53 +273,54 @@ st.sidebar.markdown("Note: Index is in-memory. For larger corpora use persistent
 if st.sidebar.button("Fetch & Index Official PDFs"):
     pdf_list = WARHAMMER_PDFS[system]
     selected_pdfs = pdf_list[:max_pdfs]  # Limit to slider value
-    
+
     st.info(f"✅ Using {len(selected_pdfs)} predefined Warhammer PDFs for {system}.")
     for item in selected_pdfs:
         st.write(f"- {item['title']}: {item['description']}")
         st.write(f"  URL: {item['url']}")
-    
+
     tempdir = tempfile.mkdtemp(prefix="rules_")
     progress = st.progress(0)
     status = st.empty()
-    
+
     def prog_cb(count, total, name=""):
         progress.progress(int((count / total) * 100))
         status.text(f"Downloaded {count}/{total}: {name}")
-    
+
     with st.spinner("Downloading PDFs..."):
         downloaded = download_pdfs(
-            [(item["url"], item["title"]) for item in selected_pdfs], 
-            tempdir, 
+            [(item["url"], item["title"]) for item in selected_pdfs],
+            tempdir,
             progress_callback=prog_cb
         )
-    
+
     if not downloaded:
         st.error("No PDFs downloaded.")
     else:
         status.text("Extracting text and building index...")
         def build_progress_hook(n):
             status.text(f"Prepared {n} chunks (approx.)")
-        
+
         try:
-           res = build_index_from_pdfs(
-    tuple([path for path, _ in downloaded]), 
-    OPENAI_API_KEY, 
-    chunk_size=chunk_size, 
-    overlap=overlap, 
-    _progress_hook=build_progress_hook
-       )
+            res = build_index_from_pdfs(
+                tuple([path for path, _ in downloaded]),
+                OPENAI_API_KEY,
+                system,
+                chunk_size=chunk_size,
+                overlap=overlap,
+                _progress_hook=build_progress_hook
+            )
             st.session_state["last_indexed"] = f"{len(downloaded)} PDFs, {res['count']} chunks"
             st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
             st.session_state["current_system"] = system
-        except OpenAIError as e:
+        except APIError as e:
             if e.code == 'insufficient_quota':
                 st.error("OpenAI quota exceeded. Please upgrade your plan or wait for reset. Details: https://platform.openai.com/account/usage")
             else:
                 st.error(f"OpenAI API error during indexing: {e}")
         except Exception as e:
             st.error(f"Index build failed: {e}")
-    
+
     try:
         shutil.rmtree(tempdir)
     except Exception:
@@ -289,32 +328,42 @@ if st.sidebar.button("Fetch & Index Official PDFs"):
 
 st.header("Ask the Rules Assistant")
 st.caption(f"📘 Active ruleset: **{system}**")
-
 st.markdown(st.secrets.get("WELCOME_MESSAGE", "Ask a core rules question about 40K, Age of Sigmar, or Kill Team."))
 
 question = st.text_input("Enter your question here (e.g., 'Can a unit that Advanced charge?'- not : 'can ultramarine advance after charging?' )")
+
+# OCR Image Upload
+uploaded_image = st.file_uploader("Upload an image for OCR (optional, e.g., screenshot of rules)", type=['png', 'jpg', 'jpeg', 'tiff'])
+
+image_text = ""
+if uploaded_image is not None:
+    image_text = extract_text_from_image(uploaded_image.read())
+    st.text_area("Extracted text from image:", value=image_text, height=150, disabled=True)
+    if st.button("Add image text to query context"):
+        st.session_state["image_text"] = image_text
+        st.success("Image text added to context!")
 
 col1, col2 = st.columns([3,1])
 with col2:
     st.markdown("**Index status**")
     st.write(st.session_state.get("last_indexed", "No index built yet"))
-   if st.button("Clear index"):
-    try:
-        store = get_faiss_store()
-        if system in store:
-            del store[system]
-            st.success(f"Cleared FAISS index for {system}.")
-        else:
-            st.info(f"No index found for {system}.")
-        build_index_from_pdfs.clear()
-        st.session_state["last_indexed"] = None
-    except Exception as e:
-        st.error(f"Failed to clear cache: {e}")
-
+    if st.button("Clear index"):
+        try:
+            store = get_faiss_store()
+            if system in store:
+                del store[system]
+                st.success(f"Cleared FAISS index for {system}.")
+            else:
+                st.info(f"No index found for {system}.")
+            build_index_from_pdfs.clear()
+            st.session_state["last_indexed"] = None
+            if "image_text" in st.session_state:
+                del st.session_state["image_text"]
+        except Exception as e:
+            st.error(f"Failed to clear cache: {e}")
 
 if st.button("Ask") and question:
-res = create_faiss_resource(st.session_state.get("current_system", system))
-
+    res = create_faiss_resource(st.session_state.get("current_system", system))
     index = res["index"]
     metadata = res["metadata"]
     if index.ntotal == 0:
@@ -325,6 +374,11 @@ res = create_faiss_resource(st.session_state.get("current_system", system))
                 q_emb = embed_texts([question])[0]
                 results = search_faiss(index, metadata, q_emb, top_k=6)
                 context = "\n\n---\n\n".join([r["text"] for r in results])
+                
+                # Include image text if available
+                if "image_text" in st.session_state and st.session_state["image_text"]:
+                    context += f"\n\n---\n\nImage OCR Context:\n{st.session_state['image_text']}"
+                
                 system_prompt = st.secrets.get("SYSTEM_PROMPT", "You are a rules assistant. Answer concisely and cite sources when possible.")
                 messages = [
                     {"role": "system", "content": system_prompt},
@@ -339,7 +393,7 @@ res = create_faiss_resource(st.session_state.get("current_system", system))
                     for r in results:
                         st.write(f"**Source:** {r['source']} — score: {r['score']:.3f}")
                         st.write(r['text'][:1000] + ("..." if len(r['text']) > 1000 else ""))
-            except OpenAIError as e:
+            except APIError as e:
                 if e.code == 'insufficient_quota':
                     st.error("OpenAI quota exceeded. Please upgrade your plan or wait for reset. Details: https://platform.openai.com/account/usage")
                 elif e.code == 429:
