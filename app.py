@@ -29,7 +29,7 @@ st.title(st.secrets.get("ASSISTANT_NAME", "Warhammer Rules Assistant"))
 st.caption("⚙️ The Omnissiah’s Cogitator — AI-assisted rules analyst for Warhammer 40,000, Age of Sigmar, and Kill Team.")
 
 DEFAULT_MODEL = st.secrets.get("DEFAULT_MODEL", "gpt-3.5-turbo")
-VISION_MODEL = st.secrets.get("VISION_MODEL", "gpt-4o-mini")
+VISION_MODEL = st.secrets.get("VISION_MODEL", "gpt-4o")  # Fallback to gpt-4o for broader access
 EMBEDDING_MODEL = st.secrets.get("EMBEDDING_MODEL", "text-embedding-ada-002")
 EMBEDDING_DIM = 3072 if "3-large" in EMBEDDING_MODEL else 1536
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
@@ -187,6 +187,11 @@ def extract_text_from_image(image_bytes: bytes) -> str:
             temperature=0.0
         )
         return response.choices[0].message.content.strip()
+    except APIError as e:
+        if e.code == 'invalid_request_error' and 'model_not_found' in str(e):
+            st.error(f"Vision model '{VISION_MODEL}' not accessible. Ensure your OpenAI project has access or update VISION_MODEL in secrets (try 'gpt-4o').")
+        st.warning(f"Vision OCR extraction failed: {e}")
+        return ""
     except Exception as e:
         st.warning(f"Vision OCR extraction failed: {e}")
         return ""
@@ -447,5 +452,6 @@ if st.button("Ask") and question:
                     st.error(f"OpenAI API error during query: {e}")
             except Exception as e:
                 st.error(f"Failed to generate answer: {e}")
+
 st.markdown("---")
-st.caption("💾 Powered by OpenAI embeddings and FAISS · © Games Workshop data used for personal reference only, all property and info belong to them")
+st.caption("💾 Powered by OpenAI embeddings and FAISS · © Games Workshop data used for personal reference")
