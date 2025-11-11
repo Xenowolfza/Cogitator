@@ -9,6 +9,7 @@ import time
 import tempfile
 import shutil
 import io
+import base64
 from typing import List, Tuple, Dict
 
 import streamlit as st
@@ -19,7 +20,6 @@ import faiss
 from openai import OpenAI
 from openai import APIError
 from PIL import Image
-import pytesseract
 
 # -------------------------
 # Page config + secrets
@@ -28,15 +28,13 @@ st.set_page_config(page_title="Warhammer Rules Assistant", layout="wide")
 st.title(st.secrets.get("ASSISTANT_NAME", "Warhammer Rules Assistant"))
 
 DEFAULT_MODEL = st.secrets.get("DEFAULT_MODEL", "gpt-3.5-turbo")
+VISION_MODEL = st.secrets.get("VISION_MODEL", "gpt-4o-mini")
 EMBEDDING_MODEL = st.secrets.get("EMBEDDING_MODEL", "text-embedding-ada-002")
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     st.warning("OpenAI API key not found. Add OPENAI_API_KEY to Streamlit Secrets or environment to enable LLM.")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-
-# Note: For OCR functionality, ensure 'pytesseract' is installed via pip and Tesseract OCR is installed system-wide.
-# On Streamlit Cloud, this may require custom setup or local deployment.
 
 WARHAMMER_PDFS = {
     "40K": [
@@ -154,16 +152,36 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
     return chunks
 
 # -------------------------
-# OCR Helper
+# OCR Helper using OpenAI Vision
 # -------------------------
 def extract_text_from_image(image_bytes: bytes) -> str:
-    """Extract text from an image using OCR (pytesseract)."""
+    """Extract text from an image using OpenAI GPT-4 Vision (OCR)."""
     try:
+        # Encode image to base64
         image = Image.open(io.BytesIO(image_bytes))
-        text = pytesseract.image_to_string(image)
-        return text.strip()
+        buffered = io.BytesIO()
+        image.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+
+        # Vision prompt for OCR
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Extract all text from this image accurately. Focus on rules, labels, or descriptions. Output only the extracted text, no additional commentary."},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_str}"}}
+                ]
+            }
+        ]
+        response = client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=messages,
+            max_tokens=1000,
+            temperature=0.0
+        )
+        return response.choices[0].message.content.strip()
     except Exception as e:
-        st.warning(f"OCR extraction failed: {e}")
+        st.warning(f"Vision OCR extraction failed: {e}")
         return ""
 
 # -------------------------
@@ -338,7 +356,7 @@ uploaded_image = st.file_uploader("Upload an image for OCR (optional, e.g., scre
 image_text = ""
 if uploaded_image is not None:
     image_text = extract_text_from_image(uploaded_image.read())
-    st.text_area("Extracted text from image:", value=image_text, height=150, disabled=True)
+    st.text_area("Extracted text from image (via OpenAI Vision):", value=image_text, height=150, disabled=True)
     if st.button("Add image text to query context"):
         st.session_state["image_text"] = image_text
         st.success("Image text added to context!")
