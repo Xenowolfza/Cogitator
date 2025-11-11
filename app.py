@@ -270,11 +270,10 @@ if st.sidebar.button("Fetch & Index Official PDFs"):
     chunk_size=chunk_size, 
     overlap=overlap, 
     _progress_hook=build_progress_hook
-)
-st.session_state["current_system"] = system
-
+       )
             st.session_state["last_indexed"] = f"{len(downloaded)} PDFs, {res['count']} chunks"
             st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
+            st.session_state["current_system"] = system
         except OpenAIError as e:
             if e.code == 'insufficient_quota':
                 st.error("OpenAI quota exceeded. Please upgrade your plan or wait for reset. Details: https://platform.openai.com/account/usage")
