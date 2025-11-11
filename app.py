@@ -104,6 +104,13 @@ WARHAMMER_PDFS = {
             "url": "https://assets.warhammer-community.com/rules-downloads/kill-team/key-downloads/universal-equipment-rules/killteam_keydownloads_universalequipment_eng_02.10.24.pdf",
             "description": "Equipment options for all teams."
         }
+        {
+            "title": "Universal Equipment Rules",
+            "url": " https://assets.warhammer-community.com/eng_kt_core_rules_update_log-l0ivf5fkvl-jgopbphagb.pdf",
+            "description": "Update_log."
+        }
+
+       
     ]
 }
 
