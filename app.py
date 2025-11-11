@@ -31,7 +31,10 @@ st.caption("⚙️ The Omnissiah’s Cogitator — AI-assisted rules analyst for
 DEFAULT_MODEL = st.secrets.get("DEFAULT_MODEL", "gpt-3.5-turbo")
 VISION_MODEL = st.secrets.get("VISION_MODEL", "gpt-4o-mini")
 EMBEDDING_MODEL = st.secrets.get("EMBEDDING_MODEL", "text-embedding-ada-002")
+<<<<<<< HEAD
 EMBEDDING_DIM = 3072 if "3-large" in EMBEDDING_MODEL else 1536
+=======
+>>>>>>> 6ac279395fa616c1bd912e81e61228dacf3a1e84
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     st.warning("OpenAI API key not found. Add OPENAI_API_KEY to Streamlit Secrets or environment to enable LLM.")
@@ -156,6 +159,7 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
 # -------------------------
 # OCR Helper using OpenAI Vision
 # -------------------------
+<<<<<<< HEAD
 @st.cache_resource(show_spinner=False)
 def get_vision_client():
     return OpenAI(api_key=OPENAI_API_KEY)
@@ -164,6 +168,11 @@ def extract_text_from_image(image_bytes: bytes) -> str:
     """Extract text from an image using OpenAI GPT-4 Vision (OCR)."""
     try:
         vision_client = get_vision_client()
+=======
+def extract_text_from_image(image_bytes: bytes) -> str:
+    """Extract text from an image using OpenAI GPT-4 Vision (OCR)."""
+    try:
+>>>>>>> 6ac279395fa616c1bd912e81e61228dacf3a1e84
         # Encode image to base64
         image = Image.open(io.BytesIO(image_bytes))
         buffered = io.BytesIO()
@@ -180,7 +189,11 @@ def extract_text_from_image(image_bytes: bytes) -> str:
                 ]
             }
         ]
+<<<<<<< HEAD
         response = vision_client.chat.completions.create(
+=======
+        response = client.chat.completions.create(
+>>>>>>> 6ac279395fa616c1bd912e81e61228dacf3a1e84
             model=VISION_MODEL,
             messages=messages,
             max_tokens=1000,
@@ -221,7 +234,11 @@ def get_faiss_store() -> Dict[str, Dict]:
     """Central cache store for all system-specific FAISS indexes."""
     return {}
 
+<<<<<<< HEAD
 def create_faiss_resource(system: str, dim: int = EMBEDDING_DIM):
+=======
+def create_faiss_resource(system: str, dim: int = 1536):
+>>>>>>> 6ac279395fa616c1bd912e81e61228dacf3a1e84
     """Creates or retrieves a FAISS index specific to a Warhammer ruleset."""
     store = get_faiss_store()
     if system not in store:
@@ -447,6 +464,9 @@ if st.button("Ask") and question:
                     st.error(f"OpenAI API error during query: {e}")
             except Exception as e:
                 st.error(f"Failed to generate answer: {e}")
+<<<<<<< HEAD
 
 st.markdown("---")
 st.caption("💾 Powered by OpenAI embeddings and FAISS · © Games Workshop data used for personal reference only, all property and info belong to them")
+=======
+>>>>>>> 6ac279395fa616c1bd912e81e61228dacf3a1e84
