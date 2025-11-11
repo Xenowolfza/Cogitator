@@ -172,30 +172,22 @@ def embed_texts(texts: List[str], model: str = "text-embedding-3-small", batch_s
     return embeddings
 
 @st.cache_resource(show_spinner=False)
-def create_faiss_resource(dim: int = 1536):
-    index = faiss.IndexFlatIP(dim)
-    metadata = {"texts": [], "sources": []}
-    return {"index": index, "metadata": metadata}
+def get_faiss_store() -> Dict[str, Dict]:
+    """Central cache store for all system-specific FAISS indexes."""
+    return {}
 
-def add_to_faiss(index, metadata, embeddings: List[List[float]], texts: List[str], sources: List[str]):
-    arr = np.array(embeddings).astype("float32")
-    norms = np.linalg.norm(arr, axis=1, keepdims=True)
-    norms[norms == 0] = 1.0
-    arr = arr / norms
-    index.add(arr)
-    metadata["texts"].extend(texts)
-    metadata["sources"].extend(sources)
+def create_faiss_resource(system: str, dim: int = 1536):
+    """Creates or retrieves a FAISS index specific to a Warhammer ruleset."""
+    store = get_faiss_store()
+    if system not in store:
+        index = faiss.IndexFlatIP(dim)
+        metadata = {"texts": [], "sources": []}
+        store[system] = {"index": index, "metadata": metadata}
+        st.info(f"🧠 Created new FAISS index for {system}.")
+    return store[system]
 
-def search_faiss(index, metadata, query_embedding, top_k=4):
-    q = np.array(query_embedding).astype("float32").reshape(1, -1)
-    q = q / (np.linalg.norm(q, axis=1, keepdims=True) + 1e-12)
-    D, I = index.search(q, top_k)
-    results = []
-    for score, idx in zip(D[0], I[0]):
-        if idx < 0:
-            continue
-        results.append({"score": float(score), "text": metadata["texts"][idx], "source": metadata["sources"][idx]})
-    return results
+
+#FAISS index:
 
 @st.cache_data(show_spinner=False)
 def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size: int = 1000, overlap: int = 200, _progress_hook=None):
@@ -224,6 +216,12 @@ def build_index_from_pdfs(pdf_paths: Tuple[str], openai_api_key: str, chunk_size
 # -------------------------
 st.sidebar.header("Configuration")
 system = st.sidebar.selectbox("Select ruleset", list(WARHAMMER_PDFS.keys()))
+# Detect ruleset changes and reset session-specific state
+if "active_ruleset" not in st.session_state or st.session_state["active_ruleset"] != system:
+    st.session_state["active_ruleset"] = system
+    st.session_state["last_indexed"] = None
+    st.info(f"🔄 Switched to {system}. You may rebuild or query its unique index.")
+
 max_pdfs = st.sidebar.slider("Max PDFs to fetch (smaller = faster)", 1, 20, 5)
 chunk_size = st.sidebar.number_input("Chunk token size", min_value=200, max_value=2000, value=1000, step=100)
 overlap = st.sidebar.number_input("Chunk overlap", min_value=0, max_value=500, value=200, step=50)
@@ -266,13 +264,15 @@ if st.sidebar.button("Fetch & Index Official PDFs"):
             status.text(f"Prepared {n} chunks (approx.)")
         
         try:
-            res = build_index_from_pdfs(
-                tuple([path for path, _ in downloaded]), 
-                OPENAI_API_KEY, 
-                chunk_size=chunk_size, 
-                overlap=overlap, 
-                _progress_hook=build_progress_hook
-            )
+           res = build_index_from_pdfs(
+    tuple([path for path, _ in downloaded]), 
+    OPENAI_API_KEY, 
+    chunk_size=chunk_size, 
+    overlap=overlap, 
+    _progress_hook=build_progress_hook
+)
+st.session_state["current_system"] = system
+
             st.session_state["last_indexed"] = f"{len(downloaded)} PDFs, {res['count']} chunks"
             st.success(f"Indexed {res['docs']} PDFs into {res['count']} chunks.")
         except OpenAIError as e:
@@ -289,25 +289,33 @@ if st.sidebar.button("Fetch & Index Official PDFs"):
         pass
 
 st.header("Ask the Rules Assistant")
-st.markdown(st.secrets.get("WELCOME_MESSAGE", "Ask a rules question about 40K, Age of Sigmar, or Kill Team."))
+st.caption(f"📘 Active ruleset: **{system}**")
 
-question = st.text_input("Enter your question here (e.g., 'Can a unit that Advanced charge?')")
+st.markdown(st.secrets.get("WELCOME_MESSAGE", "Ask a core rules question about 40K, Age of Sigmar, or Kill Team."))
+
+question = st.text_input("Enter your question here (e.g., 'Can a unit that Advanced charge?'- not : 'can ultramarine advance after charging?' )")
 
 col1, col2 = st.columns([3,1])
 with col2:
     st.markdown("**Index status**")
     st.write(st.session_state.get("last_indexed", "No index built yet"))
-    if st.button("Clear index"):
-        try:
-            create_faiss_resource.clear()
-            build_index_from_pdfs.clear()
-            st.session_state["last_indexed"] = None
-            st.success("Index cleared.")
-        except Exception:
-            st.error("Failed to clear cache. Try reloading the app.")
+   if st.button("Clear index"):
+    try:
+        store = get_faiss_store()
+        if system in store:
+            del store[system]
+            st.success(f"Cleared FAISS index for {system}.")
+        else:
+            st.info(f"No index found for {system}.")
+        build_index_from_pdfs.clear()
+        st.session_state["last_indexed"] = None
+    except Exception as e:
+        st.error(f"Failed to clear cache: {e}")
+
 
 if st.button("Ask") and question:
-    res = create_faiss_resource()
+res = create_faiss_resource(st.session_state.get("current_system", system))
+
     index = res["index"]
     metadata = res["metadata"]
     if index.ntotal == 0:
