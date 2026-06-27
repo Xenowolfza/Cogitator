@@ -4,5 +4,7 @@ faiss-cpu
 PyPDF2
 requests
 beautifulsoup4
+Pillow
 python-multipart
 tqdm
+numpy
