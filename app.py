@@ -46,71 +46,89 @@ COMMUNITY_DOWNLOAD_URLS = {
 }
 
 # ─── Curated PDF catalogue ─────────────────────────────────────────────────────
-# category field is used in the "Browse available PDFs" expander.
-# The MFM is now a live web app at https://www.warhammer-community.com/en-gb/munitorum-field-manual/
-# and is no longer distributed as a downloadable PDF.
+# Notes:
+#   • 40K is now 11th Edition (launched 20 June 2026, Armageddon set).
+#     The 10th Ed core rules PDF is retained — it remains largely compatible
+#     and covers foundational mechanics. Use the sidebar "Add Custom PDF URL"
+#     to add the new 11th Ed core rules PDF once you locate it on:
+#     https://www.warhammer-community.com/en-gb/downloads/warhammer-40000/
+#   • The "Core Rules Updates and Commentary" (Sep 2025) was 10th Ed errata —
+#     REMOVED as superseded by the new edition.
+#   • The Munitorum Field Manual is now a live web app (no downloadable PDF):
+#     https://www.warhammer-community.com/en-gb/munitorum-field-manual/
+#   • Faction Packs were released for all major factions with the 11th Ed launch.
 WARHAMMER_PDFS: Dict[str, List[Dict]] = {
     "40K": [
+        # ── Core ─────────────────────────────────────────────────────────────
         {
-            "title": "Core Rules",
+            "title": "Core Rules (10th Edition)",
             "url": "https://assets.warhammer-community.com/warhammer40000_core&key_corerules_eng_24.09-5xfayxjekm.pdf",
-            "description": "Core rules for Warhammer 40,000 battles.",
+            "description": "10th Ed core rules — foundational mechanics still referenced in 11th Ed. Replace with 11th Ed PDF via sidebar when available.",
             "category": "Core",
         },
         {
-            "title": "Core Rules Updates and Commentary",
-            "url": "https://assets.warhammer-community.com/eng_17-09_warhammer40000_core_rules_updates_and_commentary-htinngebrw-te32nyhkht.pdf",
-            "description": "Amendments and commentary (September 2025).",
-            "category": "Core",
-        },
-        {
-            "title": "Balance Dataslate",
+            "title": "Balance Dataslate (October 2025)",
             "url": "https://assets.warhammer-community.com/eng_08-10_warhammer40000_core_rules_balance_dataslate-f47uib0gs9-9kju9nznun.pdf",
-            "description": "Balance adjustments for competitive play (October 2025).",
+            "description": "Most recent confirmed Balance Dataslate. Check the downloads page for a newer 11th Ed version.",
             "category": "Core",
         },
         {
             "title": "Quick Start Guide",
             "url": "https://assets.warhammer-community.com/warhammer40000_core&key_quickstartguide_eng_24.09-s2afk26smk.pdf",
-            "description": "Beginner introduction to gameplay.",
+            "description": "Beginner introduction to Warhammer 40,000 gameplay.",
             "category": "Core",
         },
         {
             "title": "Crusade Rules",
             "url": "https://assets.warhammer-community.com/warhammer40000_crusade_crusaderules_eng_24.09-x7lpyyilc9.pdf",
-            "description": "Narrative campaign rules.",
+            "description": "Narrative Crusade campaign rules.",
             "category": "Crusade",
         },
+        # ── Faction Packs (11th Edition — released June 2026) ─────────────
+        {
+            "title": "Faction Pack — Space Marines",
+            "url": "https://assets.warhammer-community.com/eng_08-06_warhammer40000_faction_pack_space-marines-nd2ezs5yzn-wxe2nf2ckk.pdf",
+            "description": "11th Ed Space Marines Faction Pack with updated Detachments (June 2026).",
+            "category": "Faction Packs",
+        },
+        {
+            "title": "Faction Pack — Leagues of Votann",
+            "url": "https://assets.warhammer-community.com/eng_04-03_warhammer40000_faction_pack_leagues_of_votann-nga9c4cumk-snm4dohuql.pdf",
+            "description": "Leagues of Votann Faction Pack v1.2 with updated rules.",
+            "category": "Faction Packs",
+        },
+        # ── Note: further Faction Packs (Imperial, Chaos, Xenos) are available ──
+        # ── on the downloads page. Add them via the sidebar "Add Custom PDF URL". ─
     ],
     "Age of Sigmar": [
         {
             "title": "Core Rules",
             "url": "https://assets.warhammer-community.com/ageofsigmar_corerules&keydownloads_therules_eng_24.09-tbf4egjql3.pdf",
-            "description": "Fundamental rules for Age of Sigmar battles.",
+            "description": "Fundamental rules for Age of Sigmar battles (4th Edition).",
             "category": "Core",
         },
         {
-            "title": "Rules Updates",
+            "title": "Rules Updates (September 2025)",
             "url": "https://assets.warhammer-community.com/eng_24-09_aos_core_rules_rules_updates_september_2025-meyxmktmox-qwey0jc7h2.pdf",
-            "description": "Core rules amendments (September 2025).",
+            "description": "Core rules amendments — September 2025.",
             "category": "Core",
         },
         {
-            "title": "Battle Profiles and Rules Updates",
+            "title": "Battle Profiles and Rules Updates (September 2025)",
             "url": "https://assets.warhammer-community.com/eng_24-09_aos_core_rules_battle_profiles_and_rules_updates_september_2025-fjrsbz5oll-rxddil82hp.pdf",
-            "description": "Unit profiles and updates (September 2025).",
+            "description": "Unit battle profiles and rules updates — September 2025.",
             "category": "Core",
         },
         {
             "title": "Quick Start Guide",
             "url": "https://assets.warhammer-community.com/ageofsigmar_corerules&keydownloads_quickstartguide_eng_24.09-xoffxcicsi.pdf",
-            "description": "Introductory gameplay guide.",
+            "description": "Introductory gameplay guide for Age of Sigmar.",
             "category": "Core",
         },
     ],
     "Kill Team": [
         {
-            "title": "Lite Rules",
+            "title": "Lite Rules (July 2025)",
             "url": "https://assets.warhammer-community.com/eng_jul25_kt_lite_rules-jmjv4hdamy-qlsqxdf83p.pdf",
             "description": "Simplified rules for Kill Team skirmishes (July 2025).",
             "category": "Core",
@@ -118,13 +136,13 @@ WARHAMMER_PDFS: Dict[str, List[Dict]] = {
         {
             "title": "Universal Equipment Rules",
             "url": "https://assets.warhammer-community.com/rules-downloads/kill-team/key-downloads/universal-equipment-rules/killteam_keydownloads_universalequipment_eng_02.10.24.pdf",
-            "description": "Equipment options for all teams.",
+            "description": "Universal equipment options for all Kill Team rosters.",
             "category": "Core",
         },
         {
-            "title": "Core Rules Update Log",
-            "url": "https://assets.warhammer-community.com/eng_kt_core_rules_update_log-l0ivf5fkvl-jgopbphagb.pdf",
-            "description": "Update log for Kill Team core rules.",
+            "title": "Core Rules Update Log (November 2025)",
+            "url": "https://assets.warhammer-community.com/eng_19-11_kill_team_core_rules_update_log-kiltwexvpq-yqzwkq1kpu.pdf",
+            "description": "Latest Kill Team core rules update log — November 2025.",
             "category": "Core",
         },
     ],
