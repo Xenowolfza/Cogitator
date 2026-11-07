@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CatalogPanel } from "./components/CatalogPanel";
-import { CustomUnitForm } from "./components/CustomUnitForm";
 import { DatasheetsView } from "./components/DatasheetsView";
 import { ListPanel } from "./components/ListPanel";
+import { UnitEditor } from "./components/UnitEditor";
 import { FACTIONS, detachmentById, factionById } from "./data/factions";
+import { CARD_THEMES } from "./data/themes";
 import { uid } from "./lib/id";
 import { listPoints, listValidity, profileFor } from "./lib/points";
 import { resolveList } from "./lib/resolve";
 import { emptyList, exportList, loadStore, parseImportedList, saveStore } from "./lib/storage";
-import type { AppStore, ArmyList, UnitProfile } from "./lib/types";
+import type { Allegiance, AppStore, ArmyList, CardThemeId, UnitProfile, UnitSelection } from "./lib/types";
+
+const ALLEGIANCE_LABEL: Record<Allegiance, string> = {
+  imperium: "Imperium",
+  chaos: "Chaos",
+  xenos: "Xenos",
+};
 
 type Tab = "builder" | "datasheets";
 
@@ -24,7 +31,7 @@ function patchActive(store: AppStore, patch: Partial<ArmyList>): AppStore {
 export default function App() {
   const [store, setStore] = useState<AppStore>(() => loadStore());
   const [tab, setTab] = useState<Tab>("builder");
-  const [customOpen, setCustomOpen] = useState(false);
+  const [editor, setEditor] = useState<"create" | UnitSelection | null>(null);
   const [importError, setImportError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -152,10 +159,14 @@ export default function App() {
           <label>
             Faction
             <select value={list.factionId} onChange={(e) => changeFaction(e.target.value)}>
-              {FACTIONS.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
+              {(["imperium", "chaos", "xenos"] as const).map((group) => (
+                <optgroup key={group} label={ALLEGIANCE_LABEL[group]}>
+                  {FACTIONS.filter((f) => f.allegiance === group).map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -250,9 +261,26 @@ export default function App() {
             Import JSON
           </button>
           {tab === "datasheets" && (
-            <button type="button" className="btn gold" onClick={() => window.print()}>
-              Print pack
-            </button>
+            <>
+              <label className="theme-picker">
+                Card colour
+                <span className="theme-swatches">
+                  {CARD_THEMES.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      title={theme.label}
+                      data-theme={theme.id}
+                      className={(list.cardTheme ?? "parchment") === theme.id ? "theme-swatch on" : "theme-swatch"}
+                      onClick={() => setList({ cardTheme: theme.id as CardThemeId })}
+                    />
+                  ))}
+                </span>
+              </label>
+              <button type="button" className="btn gold" onClick={() => window.print()}>
+                Print pack
+              </button>
+            </>
           )}
           <input
             ref={fileRef}
@@ -277,20 +305,35 @@ export default function App() {
 
       {tab === "builder" && (
         <main className="builder">
-          {customOpen ? (
-            <CustomUnitForm
+          {editor ? (
+            <UnitEditor
               factionId={list.factionId}
               factionName={faction.name}
-              onCancel={() => setCustomOpen(false)}
+              existing={editor === "create" ? undefined : profileFor(editor)}
+              onCancel={() => setEditor(null)}
               onSave={(profile) => {
-                addUnit(profile);
-                setCustomOpen(false);
+                if (editor === "create") {
+                  addUnit(profile);
+                } else {
+                  const models = Math.min(Math.max(editor.models, profile.minModels), profile.maxModels);
+                  setList({
+                    selections: list.selections.map((sel) =>
+                      sel.uid === editor.uid ? { ...sel, customProfile: profile, models } : sel,
+                    ),
+                  });
+                }
+                setEditor(null);
               }}
             />
           ) : (
-            <CatalogPanel factionId={list.factionId} onAdd={addUnit} onCustom={() => setCustomOpen(true)} />
+            <CatalogPanel factionId={list.factionId} onAdd={addUnit} onCustom={() => setEditor("create")} />
           )}
-          <ListPanel list={list} profileFor={profileFor} onChange={(selections) => setList({ selections })} />
+          <ListPanel
+            list={list}
+            profileFor={profileFor}
+            onChange={(selections) => setList({ selections })}
+            onEdit={(sel) => setEditor(sel)}
+          />
         </main>
       )}
 

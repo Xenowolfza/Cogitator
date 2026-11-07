@@ -15,10 +15,10 @@ Open http://127.0.0.1:8501 (this repo’s forwarded app port). http://127.0.0.1:
 
 ## Use
 
-1. Pick a faction and detachment, set a points cap.
-2. Add units from the catalogue (or **Custom unit** for anything missing).
-3. Set model counts, wargear, and character enhancements.
-4. Open **Datasheets** to extract a card for every unit in the list.
+1. Pick a faction (Imperium, Chaos, or Xenos) and detachment, set a points cap.
+2. Add units from the catalogue (or **Custom unit** for anything missing). Chapter armies also include shared Adeptus Astartes units.
+3. Set model counts, wargear, and character enhancements. **Edit stats** on any list entry to override M/T/SV, weapons, or abilities for that copy.
+4. Open **Datasheets** to extract a card for every unit. Use **Card colour** to switch parchment, blood, waaagh, ultramarine, gold, night, necrodermis, or ivory.
 5. **Print pack** (browser print → Save as PDF) or **Export JSON** to move a list between browsers.
 
 Lists are stored in this browser (`localStorage`).

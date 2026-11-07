@@ -6,6 +6,7 @@ export const FACTIONS: Faction[] = [
     name: "Adeptus Astartes",
     shortName: "Astartes",
     flavor: "Superhuman infantry, elite characters, and armoured support.",
+    allegiance: "imperium",
     detachments: [
       {
         id: "gladius",
@@ -33,6 +34,7 @@ export const FACTIONS: Faction[] = [
     name: "Heretic Astartes",
     shortName: "Chaos Marines",
     flavor: "Traitor legionaries, possessed shock troops, and daemon engines.",
+    allegiance: "chaos",
     detachments: [
       {
         id: "slaves",
@@ -59,6 +61,7 @@ export const FACTIONS: Faction[] = [
     name: "Necrons",
     shortName: "Necrons",
     flavor: "Reanimating infantry, destroyer cults, and arcane heavy weapons.",
+    allegiance: "xenos",
     detachments: [
       {
         id: "awakened",
@@ -85,6 +88,7 @@ export const FACTIONS: Faction[] = [
     name: "Tyranids",
     shortName: "Tyranids",
     flavor: "Swarm organisms, synapse control, and living artillery.",
+    allegiance: "xenos",
     detachments: [
       {
         id: "invasion",
@@ -111,6 +115,7 @@ export const FACTIONS: Faction[] = [
     name: "Orks",
     shortName: "Orks",
     flavor: "Mob infantry, smashy characters, and ramshackle vehicles.",
+    allegiance: "xenos",
     detachments: [
       {
         id: "warhorde",
@@ -137,6 +142,7 @@ export const FACTIONS: Faction[] = [
     name: "Astra Militarum",
     shortName: "Astra Militarum",
     flavor: "Massed infantry, orders, and super-heavy armour.",
+    allegiance: "imperium",
     detachments: [
       {
         id: "combined",
@@ -154,6 +160,352 @@ export const FACTIONS: Faction[] = [
         summary: "Armoured spearhead. Vehicles gain extra movement and rerolls.",
         enhancements: [
           { id: "he-hunter", name: "Hunter's Honour", points: 20, text: "Bearer's vehicle weapons gain [lethal hits] against Monster and Vehicle targets." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "blood-angels",
+    name: "Blood Angels",
+    shortName: "Blood Angels",
+    flavor: "Assault specialists with Death Company and Sanguinary Guard.",
+    allegiance: "imperium",
+    includeFactionIds: ["astartes"],
+    detachments: [
+      {
+        id: "sons-sanguinius",
+        name: "Sons of Sanguinius",
+        summary: "Jump-pack assault. Charge bonuses and extra attacks on the turn they charge.",
+        enhancements: [
+          { id: "ba-rage", name: "Red Thirst", points: 15, text: "Bearer's melee weapons gain +1 Strength on the charge." },
+          { id: "ba-wings", name: "Angel's Pinions", points: 20, text: "Bearer and their unit can charge after advancing." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "dark-angels",
+    name: "Dark Angels",
+    shortName: "Dark Angels",
+    flavor: "Inner Circle veterans, Deathwing terminators, and Ravenwing outriders.",
+    allegiance: "imperium",
+    includeFactionIds: ["astartes"],
+    detachments: [
+      {
+        id: "unforgiven",
+        name: "Unforgiven Task Force",
+        summary: "Deathwing and Ravenwing support. Inner Circle units reroll hits.",
+        enhancements: [
+          { id: "da-sword", name: "Heavenfall Blade", points: 20, text: "Bearer's melee weapons gain [devastating wounds]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "space-wolves",
+    name: "Space Wolves",
+    shortName: "Space Wolves",
+    flavor: "Pack hunters, thunderwolf cavalry, and saga-driven characters.",
+    allegiance: "imperium",
+    includeFactionIds: ["astartes"],
+    detachments: [
+      {
+        id: "champions-fenris",
+        name: "Champions of Fenris",
+        summary: "Pack tactics. Infantry gain extra movement and charge rerolls.",
+        enhancements: [
+          { id: "sw-saga", name: "Saga of the Bear", points: 15, text: "Bearer has Feel No Pain 5+." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "black-templars",
+    name: "Black Templars",
+    shortName: "Black Templars",
+    flavor: "Zealous crusaders, sword brethren, and vow-driven melee.",
+    allegiance: "imperium",
+    includeFactionIds: ["astartes"],
+    detachments: [
+      {
+        id: "righteous-crusaders",
+        name: "Righteous Crusaders",
+        summary: "Take a vow. Units fight on death or gain lethal hits.",
+        enhancements: [
+          { id: "bt-vow", name: "Witchseeker Vow", points: 15, text: "Bearer's weapons have [anti-psyker 4+] and [precision]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "deathwatch",
+    name: "Deathwatch",
+    shortName: "Deathwatch",
+    flavor: "Kill teams with mixed loadouts and xenophase weaponry.",
+    allegiance: "imperium",
+    includeFactionIds: ["astartes"],
+    detachments: [
+      {
+        id: "black-spear",
+        name: "Black Spear Task Force",
+        summary: "Mission tactics. Kill teams can switch special-issue ammunition.",
+        enhancements: [
+          { id: "dw-ammo", name: "Special Issue Cache", points: 15, text: "Bearer's ranged weapons gain [lethal hits] against Xenos." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "grey-knights",
+    name: "Grey Knights",
+    shortName: "Grey Knights",
+    flavor: "Daemon-hunting psykers in terminator plate.",
+    allegiance: "imperium",
+    detachments: [
+      {
+        id: "teleport-strike",
+        name: "Teleport Strike Force",
+        summary: "Deep-striking psykers. Units can teleport in the movement phase.",
+        enhancements: [
+          { id: "gk-ward", name: "Aegis Ward", points: 20, text: "Bearer has a 4+ invulnerable save and Feel No Pain 5+ against Psychic attacks." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "custodes",
+    name: "Adeptus Custodes",
+    shortName: "Custodes",
+    flavor: "Golden demigods, unyielding infantry, and dreadnought support.",
+    allegiance: "imperium",
+    detachments: [
+      {
+        id: "shield-host",
+        name: "Shield Host",
+        summary: "Martial ka'tah. Switch between offensive and defensive stances.",
+        enhancements: [
+          { id: "ac-auramite", name: "Auramite Plate", points: 25, text: "Improve the bearer's Save by 1, to a maximum of 2+." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "sisters",
+    name: "Adepta Sororitas",
+    shortName: "Sisters",
+    flavor: "Faithful infantry, miracle dice, and sanctified war engines.",
+    allegiance: "imperium",
+    detachments: [
+      {
+        id: "triumph-faith",
+        name: "Triumph of Saint Katherine",
+        summary: "Acts of Faith. Miracle dice fuel extra hits and saves.",
+        enhancements: [
+          { id: "as-relic", name: "Martyr's Vestment", points: 15, text: "Bearer has a 4+ invulnerable save and Feel No Pain 6+." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "admech",
+    name: "Adeptus Mechanicus",
+    shortName: "Adeptus Mechanicus",
+    flavor: "Skitarii cohorts, holy engines, and rad-saturated firepower.",
+    allegiance: "imperium",
+    detachments: [
+      {
+        id: "rad-zone",
+        name: "Rad-Zone Corps",
+        summary: "Doctrina imperatives. Toggle hit and save modifiers each battle round.",
+        enhancements: [
+          { id: "am-canticles", name: "Canticle Boost", points: 15, text: "Bearer's unit rerolls hit rolls of 1." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "knights",
+    name: "Imperial Knights",
+    shortName: "Imperial Knights",
+    flavor: "Super-heavy walkers and Armiger support.",
+    allegiance: "imperium",
+    detachments: [
+      {
+        id: "noble-lance",
+        name: "Noble Lance",
+        summary: "Bondsman abilities. Big knights buff nearby Armigers.",
+        enhancements: [
+          { id: "ik-heirlooms", name: "Heedless Charge", points: 20, text: "Bearer can charge after advancing." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "death-guard",
+    name: "Death Guard",
+    shortName: "Death Guard",
+    flavor: "Plague infantry, contagions, and foetid daemon engines.",
+    allegiance: "chaos",
+    detachments: [
+      {
+        id: "virulent-vectorium",
+        name: "Virulent Vectorium",
+        summary: "Contagion range. Enemy toughness drops near your units.",
+        enhancements: [
+          { id: "dg-rot", name: "Rot-hive Plate", points: 20, text: "Bearer has Feel No Pain 5+ and a 4+ invulnerable save." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "thousand-sons",
+    name: "Thousand Sons",
+    shortName: "Thousand Sons",
+    flavor: "Sorcerers, Rubric infantry, and cabalistic rituals.",
+    allegiance: "chaos",
+    detachments: [
+      {
+        id: "cult-of-magic",
+        name: "Cult of Magic",
+        summary: "Cabal of sorcerers. Spend cabal points for extra psychic power.",
+        enhancements: [
+          { id: "ts-arcana", name: "Arcane Focus", points: 20, text: "Bearer's Psychic weapons gain +1 Strength and [devastating wounds]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "world-eaters",
+    name: "World Eaters",
+    shortName: "World Eaters",
+    flavor: "Berzerker infantry, blessings of Khorne, and daemon engines.",
+    allegiance: "chaos",
+    detachments: [
+      {
+        id: "berzerker-warband",
+        name: "Berzerker Warband",
+        summary: "Blessings of Khorne. Extra attacks and advance-and-charge.",
+        enhancements: [
+          { id: "we-axe", name: "Gorefather", points: 20, text: "Bearer's melee weapons gain +1 Damage and [lethal hits]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "daemons",
+    name: "Chaos Daemons",
+    shortName: "Daemons",
+    flavor: "Warp-spawned infantry, greater daemons, and soul grinders.",
+    allegiance: "chaos",
+    detachments: [
+      {
+        id: "daemonic-incursion",
+        name: "Daemonic Incursion",
+        summary: "Shadow of Chaos. Units in your shadow gain extra durability.",
+        enhancements: [
+          { id: "cd-crown", name: "Crown of the Pantheon", points: 25, text: "Bearer has a 4+ invulnerable save and Feel No Pain 5+." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "chaos-knights",
+    name: "Chaos Knights",
+    shortName: "Chaos Knights",
+    flavor: "Fallen walkers and War Dog packs.",
+    allegiance: "chaos",
+    detachments: [
+      {
+        id: "traitor-isab",
+        name: "Traitoris Lance",
+        summary: "Dread abilities. Super-heavies aura-buff War Dogs.",
+        enhancements: [
+          { id: "ck-warp", name: "Warp-borne Hatred", points: 20, text: "Bearer's weapons gain [lethal hits]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "tau",
+    name: "T'au Empire",
+    shortName: "T'au",
+    flavor: "Crisis suits, markerlights, and long-range cadre firepower.",
+    allegiance: "xenos",
+    detachments: [
+      {
+        id: "kauyon",
+        name: "Kauyon",
+        summary: "Patient hunter. Guided units gain extra AP later in the battle.",
+        enhancements: [
+          { id: "tau-ml", name: "Prototype Uplink", points: 15, text: "Bearer's ranged weapons have [ignores cover] and [lethal hits]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "aeldari",
+    name: "Aeldari",
+    shortName: "Aeldari",
+    flavor: "Aspect warriors, seers, and skimming tanks.",
+    allegiance: "xenos",
+    detachments: [
+      {
+        id: "warhost",
+        name: "Warhost",
+        summary: "Strands of Fate. Reroll dice and fade after shooting.",
+        enhancements: [
+          { id: "ae-fate", name: "Mantle of Fates", points: 20, text: "Once per turn, bearer can reroll one hit, wound, or save." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "drukhari",
+    name: "Drukhari",
+    shortName: "Drukhari",
+    flavor: "Raiders, wracks, and pain-fuelled glass cannons.",
+    allegiance: "xenos",
+    detachments: [
+      {
+        id: "realspace-raiders",
+        name: "Realspace Raiders",
+        summary: "Power from Pain. As they kill, they get faster and harder to hurt.",
+        enhancements: [
+          { id: "dk-pain", name: "Crucible of Malediction", points: 15, text: "Bearer’s melee weapons have [anti-infantry 3+] and [lance]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "votann",
+    name: "Leagues of Votann",
+    shortName: "Votann",
+    flavor: "Kin infantry, sagitaur transports, and hearthguard elites.",
+    allegiance: "xenos",
+    detachments: [
+      {
+        id: "oathband",
+        name: "Oathband",
+        summary: "Judgement tokens. Marked enemies are easier to wound.",
+        enhancements: [
+          { id: "lov-beam", name: "Ancestral Crest", points: 15, text: "Bearer's ranged weapons gain [lethal hits] and [heavy]." },
+        ],
+      },
+    ],
+  },
+  {
+    id: "gsc",
+    name: "Genestealer Cults",
+    shortName: "Genestealer Cults",
+    flavor: "Ambush infantry, hybrid aberrants, and stolen industrial vehicles.",
+    allegiance: "xenos",
+    detachments: [
+      {
+        id: "host-of-asc",
+        name: "Host of Ascension",
+        summary: "Cult ambush. Units return from reserves more aggressively.",
+        enhancements: [
+          { id: "gsc-focus", name: "Patriarch's Gift", points: 15, text: "Bearer’s unit can charge after advancing." },
         ],
       },
     ],

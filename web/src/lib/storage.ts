@@ -12,6 +12,7 @@ export function emptyList(partial?: Partial<ArmyList>): ArmyList {
     factionId: faction.id,
     detachmentId: faction.detachments[0].id,
     pointsCap: 2000,
+    cardTheme: "parchment",
     selections: [],
     updatedAt: new Date().toISOString(),
     ...partial,

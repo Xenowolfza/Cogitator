@@ -12,9 +12,10 @@ type Props = {
   list: ArmyList;
   profileFor: (sel: UnitSelection) => UnitProfile | undefined;
   onChange: (selections: UnitSelection[]) => void;
+  onEdit: (sel: UnitSelection) => void;
 };
 
-export function ListPanel({ list, profileFor, onChange }: Props) {
+export function ListPanel({ list, profileFor, onChange, onEdit }: Props) {
   const detachment = detachmentById(list.factionId, list.detachmentId);
   const usedEnhancements = new Set(
     list.selections.map((s) => s.enhancementId).filter((id): id is string => Boolean(id)),
@@ -64,7 +65,10 @@ export function ListPanel({ list, profileFor, onChange }: Props) {
               <div className="sel-top">
                 <div>
                   <div className="unit-role">{roleLabel(profile.role)}</div>
-                  <h3>{profile.name}</h3>
+                  <h3>
+                    {profile.name}
+                    {sel.customProfile ? <span className="edited-tag">Edited</span> : null}
+                  </h3>
                 </div>
                 <div className="unit-pts">{pts} pts</div>
               </div>
@@ -143,6 +147,18 @@ export function ListPanel({ list, profileFor, onChange }: Props) {
               )}
 
               <div className="sel-actions">
+                <button type="button" className="btn ghost slim" onClick={() => onEdit(sel)}>
+                  Edit stats
+                </button>
+                {sel.customProfile && !sel.unitId.startsWith("custom-") && (
+                  <button
+                    type="button"
+                    className="btn ghost slim"
+                    onClick={() => update(sel.uid, { customProfile: undefined })}
+                  >
+                    Revert stats
+                  </button>
+                )}
                 <button type="button" className="btn ghost slim" onClick={() => duplicate(sel)}>
                   Duplicate
                 </button>

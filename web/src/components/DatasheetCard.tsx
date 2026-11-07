@@ -1,4 +1,4 @@
-import type { ResolvedUnit, Weapon } from "../lib/types";
+import type { CardThemeId, ResolvedUnit, Weapon } from "../lib/types";
 
 function WeaponTable({ title, weapons, skillLabel }: { title: string; weapons: Weapon[]; skillLabel: string }) {
   if (weapons.length === 0) return null;
@@ -37,7 +37,7 @@ function WeaponTable({ title, weapons, skillLabel }: { title: string; weapons: W
   );
 }
 
-export function DatasheetCard({ unit }: { unit: ResolvedUnit }) {
+export function DatasheetCard({ unit, theme = "parchment" }: { unit: ResolvedUnit; theme?: CardThemeId }) {
   const { profile, selection, weapons, points, enhancement } = unit;
   const ranged = weapons.filter((w) => w.kind === "ranged");
   const melee = weapons.filter((w) => w.kind === "melee");
@@ -47,7 +47,7 @@ export function DatasheetCard({ unit }: { unit: ResolvedUnit }) {
       : null;
 
   return (
-    <article className="sheet">
+    <article className="sheet" data-theme={theme}>
       <header className="sheet-head">
         <div>
           <div className="sheet-kicker">{profile.factionKeywords.join(" · ")}</div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { unitsForFaction } from "../data/catalog";
+import { factionById } from "../data/factions";
 import type { UnitProfile, UnitRole } from "../lib/types";
 
 const ROLES: { id: "all" | UnitRole; label: string }[] = [
@@ -32,6 +33,10 @@ type Props = {
 export function CatalogPanel({ factionId, onAdd, onCustom }: Props) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<(typeof ROLES)[number]["id"]>("all");
+  const faction = factionById(factionId);
+  const includedNames = (faction?.includeFactionIds ?? [])
+    .map((id) => factionById(id)?.name)
+    .filter(Boolean);
 
   const units = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -51,6 +56,12 @@ export function CatalogPanel({ factionId, onAdd, onCustom }: Props) {
           Custom unit
         </button>
       </div>
+
+      {includedNames.length > 0 && (
+        <p className="muted catalog-note">
+          {faction?.name} models plus shared {includedNames.join(", ")} units.
+        </p>
+      )}
 
       <input
         className="search"
@@ -77,7 +88,10 @@ export function CatalogPanel({ factionId, onAdd, onCustom }: Props) {
           <li key={unit.id} className="unit-card">
             <div className="unit-card-top">
               <div>
-                <div className="unit-role">{roleLabel(unit.role)}</div>
+                <div className="unit-role">
+                  {roleLabel(unit.role)}
+                  {unit.factionId !== factionId ? " · shared" : ""}
+                </div>
                 <h3>{unit.name}</h3>
               </div>
               <div className="unit-pts">{pointsLabel(unit)}</div>

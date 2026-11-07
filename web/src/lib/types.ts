@@ -74,11 +74,15 @@ export type Detachment = {
   enhancements: Enhancement[];
 };
 
+export type Allegiance = "imperium" | "chaos" | "xenos";
+
 export type Faction = {
   id: string;
   name: string;
   shortName: string;
   flavor: string;
+  allegiance: Allegiance;
+  includeFactionIds?: string[];
   detachments: Detachment[];
 };
 
@@ -96,12 +100,23 @@ export type FactionStashEntry = {
   selections: UnitSelection[];
 };
 
+export type CardThemeId =
+  | "parchment"
+  | "blood"
+  | "waaagh"
+  | "ultramarine"
+  | "gold"
+  | "night"
+  | "necrodermis"
+  | "ivory";
+
 export type ArmyList = {
   id: string;
   name: string;
   factionId: string;
   detachmentId: string;
   pointsCap: number;
+  cardTheme?: CardThemeId;
   selections: UnitSelection[];
   factionStash?: Record<string, FactionStashEntry>;
   updatedAt: string;

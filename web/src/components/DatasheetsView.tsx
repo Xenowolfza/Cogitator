@@ -44,7 +44,7 @@ export function DatasheetsView({ list, units }: Props) {
 
       <div className="sheet-grid">
         {units.map((unit) => (
-          <DatasheetCard key={unit.selection.uid} unit={unit} />
+          <DatasheetCard key={unit.selection.uid} unit={unit} theme={list.cardTheme ?? "parchment"} />
         ))}
       </div>
     </div>
