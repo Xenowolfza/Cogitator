@@ -23,11 +23,16 @@
   },
   "portsAttributes": {
     "8501": {
-      "label": "Application",
+      "label": "Strike Force",
+      "onAutoForward": "openPreview"
+    },
+    "5173": {
+      "label": "Strike Force (Vite)",
       "onAutoForward": "openPreview"
     }
   },
   "forwardPorts": [
-    8501
+    8501,
+    5173
   ]
 }

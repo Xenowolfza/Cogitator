@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5173
+Open http://127.0.0.1:8501 (this environment forwards that port). http://127.0.0.1:5173 also works when the proxy is running.
 
 - Build a list: faction, detachment, points cap, units, wargear, enhancements
 - **Datasheets** tab: one 10th-edition-style data card per unit (chosen loadout only)

@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5173
+Open http://127.0.0.1:8501 (this repo’s forwarded app port). http://127.0.0.1:5173 also works when the proxy is running.
 
 ## Use
 
