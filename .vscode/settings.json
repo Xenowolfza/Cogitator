@@ -1,0 +1,14 @@
+{
+  "remote.autoForwardPorts": true,
+  "remote.autoForwardPortsSource": "process",
+  "remote.portsAttributes": {
+    "8501": {
+      "label": "Strike Force",
+      "onAutoForward": "openBrowser"
+    },
+    "5173": {
+      "label": "Strike Force (Vite)",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}
