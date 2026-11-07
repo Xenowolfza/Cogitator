@@ -9,4 +9,6 @@ export const CARD_THEMES: { id: CardThemeId; label: string }[] = [
   { id: "night", label: "Night Fighting" },
   { id: "necrodermis", label: "Necrodermis" },
   { id: "ivory", label: "Ivory" },
+  { id: "purple", label: "Warp Purple" },
+  { id: "fenris", label: "Space Wolf Grey" },
 ];

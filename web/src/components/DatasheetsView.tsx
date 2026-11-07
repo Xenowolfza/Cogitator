@@ -1,5 +1,5 @@
 import { DatasheetCard } from "./DatasheetCard";
-import { detachmentById, factionById } from "../data/factions";
+import { detachmentById, extrasFor, factionById } from "../data/factions";
 import { listPoints } from "../lib/points";
 import type { ArmyList, ResolvedUnit } from "../lib/types";
 
@@ -10,7 +10,7 @@ type Props = {
 
 export function DatasheetsView({ list, units }: Props) {
   const faction = factionById(list.factionId);
-  const detachment = detachmentById(list.factionId, list.detachmentId);
+  const detachment = detachmentById(list.factionId, list.detachmentId, extrasFor(list));
   const pts = listPoints(list);
 
   return (

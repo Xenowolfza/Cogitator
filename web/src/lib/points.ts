@@ -1,4 +1,4 @@
-import { detachmentById } from "../data/factions";
+import { detachmentById, extrasFor } from "../data/factions";
 import { unitById } from "../data/catalog";
 import type { ArmyList, UnitProfile, UnitSelection } from "./types";
 
@@ -24,7 +24,7 @@ export function selectionPoints(selection: UnitSelection, list: ArmyList): numbe
   }
 
   if (selection.enhancementId) {
-    const det = detachmentById(list.factionId, list.detachmentId);
+    const det = detachmentById(list.factionId, list.detachmentId, extrasFor(list));
     const enh = det?.enhancements.find((e) => e.id === selection.enhancementId);
     if (enh) pts += enh.points;
   }

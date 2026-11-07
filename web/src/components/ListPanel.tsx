@@ -1,4 +1,4 @@
-import { detachmentById } from "../data/factions";
+import { detachmentById, extrasFor } from "../data/factions";
 import { selectionPoints } from "../lib/points";
 import { toggleOption } from "../lib/resolve";
 import type { ArmyList, UnitProfile, UnitSelection } from "../lib/types";
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export function ListPanel({ list, profileFor, onChange, onEdit }: Props) {
-  const detachment = detachmentById(list.factionId, list.detachmentId);
+  const detachment = detachmentById(list.factionId, list.detachmentId, extrasFor(list));
   const usedEnhancements = new Set(
     list.selections.map((s) => s.enhancementId).filter((id): id is string => Boolean(id)),
   );

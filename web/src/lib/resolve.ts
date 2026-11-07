@@ -1,4 +1,4 @@
-import { detachmentById } from "../data/factions";
+import { detachmentById, extrasFor } from "../data/factions";
 import type { ArmyList, ResolvedUnit, UnitSelection, Weapon } from "./types";
 import { profileFor, selectionPoints } from "./points";
 
@@ -30,7 +30,7 @@ export function resolveSelection(selection: UnitSelection, list: ArmyList): Reso
   const profile = profileFor(selection);
   if (!profile) return null;
 
-  const det = detachmentById(list.factionId, list.detachmentId);
+  const det = detachmentById(list.factionId, list.detachmentId, extrasFor(list));
   const enhancement = selection.enhancementId
     ? det?.enhancements.find((e) => e.id === selection.enhancementId)
     : undefined;

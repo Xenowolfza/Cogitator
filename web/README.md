@@ -15,7 +15,7 @@ Open http://127.0.0.1:8501 (this repo’s forwarded app port). http://127.0.0.1:
 
 ## Use
 
-1. Pick a faction (Imperium, Chaos, or Xenos) and detachment, set a points cap.
+1. Pick a faction (Imperium, Chaos, or Xenos) and a detachment. Built-in detachments are short playstyle notes using public 11th-edition names. Official rule text is not included. Use **Your detachment notes** to type your own summary, enhancements, or attach a faction-pack PDF that stays in this browser.
 2. Add units from the catalogue (or **Custom unit** for anything missing). Chapter armies also include shared Adeptus Astartes units.
 3. Set model counts, wargear, and character enhancements. **Edit stats** on any list entry to override M/T/SV, weapons, or abilities for that copy.
 4. Open **Datasheets** to extract a card for every unit. Use **Card colour** to switch parchment, blood, waaagh, ultramarine, gold, night, necrodermis, or ivory.

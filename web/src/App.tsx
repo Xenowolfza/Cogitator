@@ -3,7 +3,8 @@ import { CatalogPanel } from "./components/CatalogPanel";
 import { DatasheetsView } from "./components/DatasheetsView";
 import { ListPanel } from "./components/ListPanel";
 import { UnitEditor } from "./components/UnitEditor";
-import { FACTIONS, detachmentById, factionById } from "./data/factions";
+import { DetachmentNotes } from "./components/DetachmentNotes";
+import { FACTIONS, detachmentById, extrasFor, factionById } from "./data/factions";
 import { CARD_THEMES } from "./data/themes";
 import { uid } from "./lib/id";
 import { listPoints, listValidity, profileFor } from "./lib/points";
@@ -37,7 +38,8 @@ export default function App() {
 
   const list = store.lists.find((l) => l.id === store.activeId) ?? store.lists[0];
   const faction = factionById(list.factionId) ?? FACTIONS[0];
-  const detachment = detachmentById(list.factionId, list.detachmentId);
+  const extras = extrasFor(list);
+  const detachment = detachmentById(list.factionId, list.detachmentId, extras);
   const pts = listPoints(list);
   const validity = listValidity(list);
   const resolved = useMemo(() => resolveList(list), [list]);
@@ -63,7 +65,8 @@ export default function App() {
     };
     const restored = stash[next.id];
     const det =
-      detachmentById(next.id, restored?.detachmentId ?? next.detachments[0].id) ?? next.detachments[0];
+      detachmentById(next.id, restored?.detachmentId ?? next.detachments[0].id, list.extraDetachments?.[next.id] ?? []) ??
+      next.detachments[0];
     const validEnh = new Set(det.enhancements.map((e) => e.id));
     const selections = [...(restored?.selections ?? []), ...custom].map((sel) =>
       sel.enhancementId && !validEnh.has(sel.enhancementId)
@@ -176,7 +179,7 @@ export default function App() {
               value={list.detachmentId}
               onChange={(e) => {
                 const detachmentId = e.target.value;
-                const next = detachmentById(list.factionId, detachmentId);
+                const next = detachmentById(list.factionId, detachmentId, extras);
                 const valid = new Set(next?.enhancements.map((enh) => enh.id) ?? []);
                 setList({
                   detachmentId,
@@ -193,6 +196,15 @@ export default function App() {
                   {d.name}
                 </option>
               ))}
+              {extras.length > 0 && (
+                <optgroup label="Your notes">
+                  {extras.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </label>
           <label>
@@ -302,6 +314,16 @@ export default function App() {
           <strong>{detachment.name}:</strong> {detachment.summary}
         </p>
       )}
+      <DetachmentNotes
+        key={list.factionId}
+        factionName={faction.name}
+        notes={extras}
+        onChange={(notes) =>
+          setList({
+            extraDetachments: { ...(list.extraDetachments ?? {}), [list.factionId]: notes },
+          })
+        }
+      />
 
       {tab === "builder" && (
         <main className="builder">

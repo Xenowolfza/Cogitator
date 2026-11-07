@@ -72,6 +72,11 @@ export type Detachment = {
   name: string;
   summary: string;
   enhancements: Enhancement[];
+  /** User-added note. Catalog detachments omit this. */
+  custom?: boolean;
+  /** Filename of a private reference stored only in this browser. */
+  referenceName?: string;
+  referenceId?: string;
 };
 
 export type Allegiance = "imperium" | "chaos" | "xenos";
@@ -108,7 +113,9 @@ export type CardThemeId =
   | "gold"
   | "night"
   | "necrodermis"
-  | "ivory";
+  | "ivory"
+  | "purple"
+  | "fenris";
 
 export type ArmyList = {
   id: string;
@@ -118,6 +125,8 @@ export type ArmyList = {
   pointsCap: number;
   cardTheme?: CardThemeId;
   selections: UnitSelection[];
+  /** User-written detachment notes, keyed by faction id. */
+  extraDetachments?: Record<string, Detachment[]>;
   factionStash?: Record<string, FactionStashEntry>;
   updatedAt: string;
 };
